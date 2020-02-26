@@ -1,0 +1,1 @@
+This repository contains processed data describing within-host infection with influenza B.  Data are associated with the paper by Lumby et al., published in Clinical Infectious Diseases (currently in press as of 26th Feb 2020).
