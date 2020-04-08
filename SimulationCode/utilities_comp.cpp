@@ -13,6 +13,7 @@ void GetOptions (run_params& p, int argc, const char **argv) {
 	p.reps=10;
 	p.process=0;
 	p.cut_variants=1;
+	p.add_ld=0;
 	int x=2;
 	while (x < argc && (argv[x][0]=='-')) {
 		p_switch=argv[x];
