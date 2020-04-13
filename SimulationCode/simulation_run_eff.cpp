@@ -31,9 +31,26 @@ int main(int argc, const char **argv){
         return 0;
     }
     
-	//Setup : Get a list of prime numbers bigger than N_b
+	//Setup : Pre-calculate some permutation lists
 	vector<int> prs;
 	GetPrimesList(p,N_b,prs);
+    
+    //For each prime, find primitive roots
+    int tot_perms=0; //Total permutations generated
+    vector< vector<int> > all_roots;
+    for (int i=0;i<prs.size();i++) {
+        int pr=prs[i];
+        int phi=prs[i]-1;
+        vector<int> factors;
+        GetPrimeFactors(phi,factors);
+        vector<int> roots;
+        GetPrimitiveRoots(pr,phi,factors,roots);
+        all_roots.push_back(roots);
+        tot_perms=tot_perms+roots.size();
+        if (tot_perms>p.nperms) {
+            break;
+        }
+    }
 
     //Get consensus from variant data
 	cout << "Get consensus\n";
@@ -53,7 +70,7 @@ int main(int argc, const char **argv){
 
 	//Add in initial variants
     //Note : This step incorporates the reduction of variants based upon the SureSelect method statistics.  This reduction can be removed using the --cut_variants 0 flag.
-    AddInitialVariants (p,N_b,prs,consensus,init_var,population,rgen);
+    AddInitialVariants (p,N_b,prs,all_roots,consensus,init_var,population,rgen);
     
 	cout << "Initial population size is " << population[0].size() << "\n";
 

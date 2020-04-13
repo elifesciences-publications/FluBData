@@ -19,7 +19,7 @@ struct run_params {
     int reps; //Number of simulations to run from the same start point
     int process;  //Flag to process previous data: Requires 200 outputs from --multi 1 flagged code
     int cut_variants; //Flag to remove variation from the initial population using statistics from the analysis of SureSelect replicate samples
-    int add_ld; //Flag to impose linkage disequilibrium within the initial population
+    int nperms; //Minimum number of permutation lists from which to generate initial variants
 };
 
 struct var {  //Unit for sparse storage of mutations
@@ -64,11 +64,17 @@ void GetOptions (run_params& p, int argc, const char **argv);
 void ProcessData (run_params p, int& N_b, gsl_rng *rgen);
 void MakePermutation (int n, int k, vector<int> aa, vector<int>& p, gsl_rng *rgen);
 void GetPrimesList (run_params p, int N_b, vector<int>& prs);
+void GetPrimeFactors (int phi, vector<int>& factors);
+int GetPrimitiveRoot (int pr, int phi, vector<int> factors);
+void GetPrimitiveRoots (int pr, int phi, vector<int> factors, vector<int>& roots);
+int FindPower (int x, int y, int p);
+
+
 void GetConsensus (vector< vector< vector< double> > >& init_var, vector< vector<int> >& consensus);
 void SetupPopulation(int N_max, vector< vector<haplo> >& population);
-void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector<int> >& consensus, vector< vector< vector< double> > >& init_var, vector< vector<haplo> >& population, gsl_rng *rgen);
+void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector<int> >& all_roots, vector< vector<int> >& consensus, vector< vector< vector< double> > >& init_var, vector< vector<haplo> >& population, gsl_rng *rgen);
 void CutInitialFrequencies(double& q, gsl_rng *rgen);
-void GetPrimePermutation (int& chk, int N_b, int k, vector<int>& perm, vector<int>& prs, gsl_rng *rgen);
+void GetPrimePermutation (int N_b, int k, vector<int>& perm, vector<int>& prs, vector< vector<int> >& all_roots, gsl_rng *rgen);
 void CalculateAlleleFrequencies (double size, vector< vector<int> > consensus, vector< vector<haplo> >& population, vector< vector< vector<double> > >& afs);
 void ProcFreqs (run_params p, vector< vector< vector<double> > >& afs);
 void CalcDist (vector< vector< vector<double> > >& afs, vector< vector< vector<double> > >& afs_init);

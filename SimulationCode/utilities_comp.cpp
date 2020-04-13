@@ -13,7 +13,7 @@ void GetOptions (run_params& p, int argc, const char **argv) {
 	p.reps=10;
 	p.process=0;
 	p.cut_variants=1;
-	p.add_ld=0;
+	p.nperms=50000;
 	int x=2;
 	while (x < argc && (argv[x][0]=='-')) {
 		p_switch=argv[x];
@@ -23,9 +23,9 @@ void GetOptions (run_params& p, int argc, const char **argv) {
 		} else if (p_switch.compare("--rstart")==0) {
 			x++;
 			p.rstart=atoi(argv[x]);
-        } else if (p_switch.compare("--add_ld")==0) {
+        } else if (p_switch.compare("--nperms")==0) {
             x++;
-            p.add_ld=atoi(argv[x]);
+            p.nperms=atoi(argv[x]);
         } else if (p_switch.compare("--multi")==0) {
             x++;
             p.multi=atoi(argv[x]);
@@ -117,17 +117,7 @@ void GetPrimesList (run_params p, int N_b, vector<int>& prs) {
     int lp=0;
     int val=N_b+1;
     int sqv=floor(sqrt(val+0.1))+1;
-    int lim=500;
-    if (N_b>100000) {
-            lim=5000;
-    }
-    if (N_b>1000000) {
-            lim=50000;
-    }
-    if (p.add_ld==1) {
-        lim=1;
-    }
-    while (lp<lim) {
+    while (lp<5000) {
         int isp=1;
         for (int i=2;i<=sqv;i++) {
             if (val%i==0) {
@@ -141,6 +131,77 @@ void GetPrimesList (run_params p, int N_b, vector<int>& prs) {
         }
         val++;
     }
+}
+
+void GetPrimeFactors (int phi, vector<int>& factors) {
+    int found=0;
+    while (phi%2==0) {
+        phi=phi/2;
+        if (found==0) {
+            factors.push_back(2);
+            found=1;
+        }
+    }
+    int sqv=floor(sqrt(phi+0.1))+1;
+    for (int i=3;i<=sqv;i=i+2) {
+        found=0;
+        while (phi%i==0) {
+            phi=phi/i;
+            if (found==0) {
+                factors.push_back(i);
+                found=1;
+            }
+        }
+    }
+    if (phi>1) {
+        factors.push_back(phi);
+    }
+}
+
+int GetPrimitiveRoot (int pr, int phi, vector<int> factors) {
+    for (int i=2;i<=phi;i++) {
+        int found=1;
+        for (int j=0;j<factors.size();j++) {
+            int r=FindPower(i,phi/factors[j],pr);
+            if (r==1) {
+                found=0;
+                break;
+            }
+        }
+        if (found==1) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void GetPrimitiveRoots (int pr, int phi, vector<int> factors, vector<int>& roots) {
+    for (int i=2;i<=phi;i++) {
+        int found=1;
+        for (int j=0;j<factors.size();j++) {
+            int r=FindPower(i,phi/factors[j],pr);
+            if (r==1) {
+                found=0;
+                break;
+            }
+        }
+        if (found==1) {
+            roots.push_back(i);
+        }
+    }
+}
+
+int FindPower (int x, int y, int p) {
+    int res=1;
+    x=x%p;
+    while (y>0) {
+        if (y & 1)
+            res=(res*x)%p;
+        
+        y = y >> 1;
+        x=(x*x)%p;
+    }
+    return res;
 }
 
 void GetConsensus (vector< vector< vector< double> > >& init_var, vector< vector<int> >& consensus) {
@@ -179,7 +240,7 @@ void SetupPopulation(int N_max, vector< vector<haplo> >& population) {
     }
 }
 
-void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector<int> >& consensus, vector< vector< vector< double> > >& init_var, vector< vector<haplo> >& population, gsl_rng *rgen) {
+void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector<int> >& all_roots, vector< vector<int> >& consensus, vector< vector< vector< double> > >& init_var, vector< vector<haplo> >& population, gsl_rng *rgen) {
     cout << "Add initial variants\n";
     cout << init_var.size() << "\n";
     cout << population.size() << "\n";
@@ -206,11 +267,12 @@ void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector
             }
             if (tot_Nm>0) {
                 vector<int> p;
-                int chk=1;
-                while (chk==1) {
+                GetPrimePermutation (N_b,tot_Nm,p,prs,all_roots,rgen);
+                
+                /*while (chk==1) {
                     p.clear();
                     GetPrimePermutation(chk,N_b,tot_Nm,p,prs,rgen);
-                }
+                }*/
                 int st=0;
                 for (int k=0;k<Nm_vals.size();k++) {
                     var v;
@@ -293,14 +355,19 @@ void CutInitialFrequencies(double& q, gsl_rng *rgen) {
 	}
 }
 
-void GetPrimePermutation (int& chk, int N_b, int k, vector<int>& perm, vector<int>& prs, gsl_rng *rgen) {
-    chk=0;
-    int rp=floor(gsl_rng_uniform(rgen)*prs.size());
-    int pp=prs[rp];
-    long long r=floor(gsl_rng_uniform(rgen)*N_b);
+void GetPrimePermutation (int N_b, int k, vector<int>& perm, vector<int>& prs, vector< vector<int> >& all_roots, gsl_rng *rgen) {
+    //Random prime number
+    int rp=floor(gsl_rng_uniform(rgen)*all_roots.size());
+    int pp=prs[rp]; //Prime number
+    //Find random primitive root
+    int rs=floor(gsl_rng_uniform(rgen)*all_roots[rp].size());
+    long long r=all_roots[rp][rs]; //Primitive root
     long long r_orig=r;
+   //cout << "Orig " << r_orig << "\n";
     vector<int> ps;
-    perm.push_back(r);
+    if (r<=N_b) {
+        perm.push_back(r-1);
+    }
     int index=1;
     int rstore=-1;
     while (index<k) {
@@ -308,12 +375,8 @@ void GetPrimePermutation (int& chk, int N_b, int k, vector<int>& perm, vector<in
         if (r<0) {
             r=r+pp;
         }
-        if (r==rstore) {
-            chk=1;
-            index=k+1;
-        }
-        if (r<N_b) {
-            perm.push_back(r);
+        if (r<=N_b) {  //Some numbers generated in prime permutation will be too large.  Remove these
+            perm.push_back(r-1);
             index++;
         }
         rstore=r;
