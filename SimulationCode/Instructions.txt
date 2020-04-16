@@ -1,5 +1,3 @@
-This code is provided without any guarantee, warranty, or implied liability etc.
-
 This code conducts Wright-Fisher simulations on influenza-like populations.  It requires input data giving allele frequencies for each segment of a virus.  According to the default options, these data are in sequentially-named directories Seg1, Seg2, Seg3, etc. in the Data directory.
 
 Given a population size, the code initiates a population, then simulates one generation of the evolution of that population under genetic drift.  It then reports the distance between the two populations, measured as a generalised Hamming distance between the before and after samples.
