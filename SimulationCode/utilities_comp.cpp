@@ -268,11 +268,6 @@ void AddInitialVariants (run_params p, int N_b, vector<int>& prs, vector< vector
             if (tot_Nm>0) {
                 vector<int> p;
                 GetPrimePermutation (N_b,tot_Nm,p,prs,all_roots,rgen);
-                
-                /*while (chk==1) {
-                    p.clear();
-                    GetPrimePermutation(chk,N_b,tot_Nm,p,prs,rgen);
-                }*/
                 int st=0;
                 for (int k=0;k<Nm_vals.size();k++) {
                     var v;
@@ -365,10 +360,11 @@ void GetPrimePermutation (int N_b, int k, vector<int>& perm, vector<int>& prs, v
     long long r_orig=r;
    //cout << "Orig " << r_orig << "\n";
     vector<int> ps;
+    int index=0;
     if (r<=N_b) {
         perm.push_back(r-1);
+        index++;
     }
-    int index=1;
     int rstore=-1;
     while (index<k) {
         r=(r*r_orig)%pp;
